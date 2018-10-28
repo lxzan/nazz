@@ -12,6 +12,7 @@
 *.out
 
 main.go
+nazz
 vendor/
 demo/
 dev

@@ -6,41 +6,34 @@ import (
 )
 
 type Context struct {
-	Writer      http.ResponseWriter
-	HttpRequest *http.Request
-	PathParams  Form
+	Response   http.ResponseWriter
+	Request    *http.Request
+	PathParams Form
 }
 
 type J map[string]interface{}
+
 type Form map[string]string
 
-func (this *Context) JSON(v interface{}, statusCode ...int) error {
+func (this *Context) JSON(v interface{}, statusCode ...int) []byte {
 	if len(statusCode) > 0 {
-		this.Writer.WriteHeader(statusCode[0])
+		this.Response.WriteHeader(statusCode[0])
 	}
 
-	data, err1 := json.Marshal(v)
-	if err1 != nil {
-		return err1
-	}
-
-	_, err2 := this.Writer.Write(data)
-	if err2 != nil {
-		return err2
-	}
-	return nil
+	data, _ := json.Marshal(v)
+	return data
 }
 
 func (this *Context) Render(data []byte, statusCode ...int) error {
 	if len(statusCode) > 0 {
-		this.Writer.WriteHeader(statusCode[0])
+		this.Response.WriteHeader(statusCode[0])
 	}
-	_, err := this.Writer.Write(data)
+	_, err := this.Response.Write(data)
 	return err
 }
 
 func (this *Context) SetHeaders(headers Form) {
 	for k, v := range headers {
-		this.Writer.Header().Set(k, v)
+		this.Response.Header().Set(k, v)
 	}
 }

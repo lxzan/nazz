@@ -5,11 +5,28 @@ import (
 	"strings"
 )
 
+type Router interface {
+	Use(middlewares ...string) Router
+}
+
 // 静态路由
 type staticRouter struct {
-	Path    string
-	Method  string
-	Handler Handler
+	Path              string
+	Method            string
+	Handler           Handler
+	BeforeMiddlewares []Middleware
+}
+
+// 请求前中间件
+func (this *staticRouter) Use(middlewares ...string) Router {
+	for _, name := range middlewares {
+		fn, ok := wares[name]
+		if !ok {
+			panic(name + " middleware not exist")
+		}
+		this.BeforeMiddlewares = append(this.BeforeMiddlewares, fn)
+	}
+	return this
 }
 
 type dynamicRouterParam struct {
@@ -21,6 +38,13 @@ type dynamicRouter struct {
 	staticRouter
 	re     *regexp.Regexp
 	params []dynamicRouterParam
+}
+
+// 路由组
+type RouterGroup struct {
+	Prefix         string
+	staticRouters  map[string]*staticRouter
+	dynamicRouters map[string]*dynamicRouter
 }
 
 // 是否为静态路由
