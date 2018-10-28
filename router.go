@@ -7,14 +7,16 @@ import (
 
 type Router interface {
 	Use(middlewares ...string) Router
+	After(middlewares ...string) Router
 }
 
 // 静态路由
 type staticRouter struct {
-	Path              string
-	Method            string
-	Handler           Handler
-	BeforeMiddlewares []Middleware
+	Path           string
+	Method         string
+	Handler        Handler
+	BeforeResponse []Middleware
+	AfterResponse  []Middleware
 }
 
 // 请求前中间件
@@ -24,7 +26,18 @@ func (this *staticRouter) Use(middlewares ...string) Router {
 		if !ok {
 			panic(name + " middleware not exist")
 		}
-		this.BeforeMiddlewares = append(this.BeforeMiddlewares, fn)
+		this.BeforeResponse = append(this.BeforeResponse, fn)
+	}
+	return this
+}
+
+func (this *staticRouter) After(middlewares ...string) Router {
+	for _, name := range middlewares {
+		fn, ok := wares[name]
+		if !ok {
+			panic(name + " middleware not exist")
+		}
+		this.AfterResponse = append(this.AfterResponse, fn)
 	}
 	return this
 }

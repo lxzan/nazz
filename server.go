@@ -95,19 +95,34 @@ func (this *Server) Listen(port int) {
 		isMatch := false
 		if ok {
 			isMatch = true
-			for _,fn := range r1.BeforeMiddlewares{
+			for _, fn := range r1.BeforeResponse {
 				if !fn(ctx) {
 					return
 				}
 			}
 			data := r1.Handler(ctx)
 			ctx.Response.Write(data)
+			for _, fn := range r1.AfterResponse {
+				if !fn(ctx) {
+					return
+				}
+			}
 		} else {
 			m, r2 := this.matchDynamic(ctx)
 			if m {
 				isMatch = true
+				for _, fn := range r1.BeforeResponse {
+					if !fn(ctx) {
+						return
+					}
+				}
 				data := r2.Handler(ctx)
 				ctx.Response.Write(data)
+				for _, fn := range r1.AfterResponse {
+					if !fn(ctx) {
+						return
+					}
+				}
 			}
 		}
 
