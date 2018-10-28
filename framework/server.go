@@ -3,28 +3,9 @@ package nazz
 import (
 	"fmt"
 	"net/http"
-	"regexp"
 	"strconv"
 	"strings"
 )
-
-// 静态路由
-type staticRouter struct {
-	Path    string
-	Method  string
-	Handler Handler
-}
-
-type dynamicRouterParam struct {
-	key   string
-	index int
-}
-
-type dynamicRouter struct {
-	staticRouter
-	re     *regexp.Regexp
-	params []dynamicRouterParam
-}
 
 type Handler func(ctx *Context)
 
@@ -67,18 +48,16 @@ func (this *Server) matchDynamic(ctx *Context) (match bool, router *dynamicRoute
 	for i, _ := range paths {
 		key := strings.ToLower(ctx.HttpRequest.Method) + ":" + strings.Join(paths[0:i], "/")
 		r, ok := this.dynamicRouters[key]
-		if ok {
+		if ok && r.re.MatchString(ctx.HttpRequest.URL.Path) {
 			router = r
 			match = true
-		} else if match {
 			break
 		}
 	}
 
-	if !match || !router.re.MatchString(ctx.HttpRequest.URL.Path) {
+	if !match {
 		return false, nil
 	}
-
 	for _, item := range router.params {
 		ctx.PathParams[item.key] = paths[item.index]
 	}
