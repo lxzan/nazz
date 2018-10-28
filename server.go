@@ -89,6 +89,12 @@ func (this *Server) Listen(port int) {
 	println(fmt.Sprintf("Nazz is listening on port %d", port))
 
 	http.ListenAndServe(addr, NewHandler(func(ctx *Context) {
+		for _, fn := range globalBeforeWares {
+			if !fn(ctx) {
+				return
+			}
+		}
+
 		path := ctx.Request.URL.Path
 		key := strings.ToLower(ctx.Request.Method) + ":" + path
 		r1, ok := this.staticRouters[key]
@@ -128,6 +134,12 @@ func (this *Server) Listen(port int) {
 
 		if !isMatch {
 			ctx.Render([]byte("<h1>404 Not Found</h1>"), 404)
+		}
+
+		for _, fn := range globalAfterWares {
+			if !fn(ctx) {
+				return
+			}
 		}
 	}))
 }

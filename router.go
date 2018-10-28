@@ -53,13 +53,6 @@ type dynamicRouter struct {
 	params []dynamicRouterParam
 }
 
-// 路由组
-type RouterGroup struct {
-	Prefix         string
-	staticRouters  map[string]*staticRouter
-	dynamicRouters map[string]*dynamicRouter
-}
-
 // 是否为静态路由
 func isStatic(path string) bool {
 	arr := strings.Split(path, "/")
