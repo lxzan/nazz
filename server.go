@@ -5,12 +5,12 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"net/url"
 )
 
 type Handler func(ctx *Context) []byte
 
 type Server struct {
-	Port           int
 	staticRouters  map[string]*staticRouter
 	dynamicRouters map[string]*dynamicRouter
 }
@@ -25,7 +25,7 @@ func NewServer() *Server {
 	return server
 }
 
-func (this *Server) Get(path string, handler Handler) Router {
+func (this *Server) GET(path string, handler Handler) Router {
 	r1 := staticRouter{
 		Path:    path,
 		Method:  "GET",
@@ -86,6 +86,10 @@ func (this *Server) matchDynamic(ctx *Context) (match bool, router *dynamicRoute
 	for _, item := range router.params {
 		ctx.PATHINFO[item.key] = paths[item.index]
 	}
+
+	for k, v := range ctx.PATHINFO {
+		ctx.GET.Add(k, v)
+	}
 	return true, router
 }
 
@@ -104,6 +108,7 @@ func (this *globalHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		Response: w,
 		Request:  r,
 		PATHINFO: Form{},
+		GET:      url.Values{},
 	})
 }
 

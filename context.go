@@ -6,6 +6,8 @@ import (
 	"net/url"
 	"reflect"
 	"strconv"
+	"mime"
+	"mime/multipart"
 )
 
 type Context struct {
@@ -13,6 +15,7 @@ type Context struct {
 	Request  *http.Request
 	PATHINFO Form
 	GET      url.Values // GET参数
+	FILE     map[string][]*multipart.FileHeader
 }
 
 type J map[string]interface{}
@@ -43,13 +46,44 @@ func (this *Context) SetHeaders(headers Form) {
 	}
 }
 
-func (this *Context) ParseGet(inputs interface{}) error {
-	if len(this.GET) == 0 {
-		return nil
-	}
+func (this *Context) ParseGet(inputs interface{}) {
+	value2Struct(this.GET, inputs)
+}
 
-	val := reflect.ValueOf(inputs).Elem()
-	t := reflect.TypeOf(inputs).Elem()
+const (
+	urlEncode  = "application/x-www-form-urlencoded"
+	jsonEncode = "application/json"
+	formEncode = "multipart/form-data"
+)
+
+func (this *Context) ParseBody(input interface{}) {
+	contentType := this.Request.Header.Get("Content-Type")
+	mediaType, params, _ := mime.ParseMediaType(contentType)
+
+	if mediaType == urlEncode {
+		var buf = make([]byte, this.Request.ContentLength)
+		this.Request.Body.Read(buf)
+		v, _ := url.ParseQuery(string(buf))
+		value2Struct(v, input)
+	} else if mediaType == jsonEncode {
+		var buf = make([]byte, this.Request.ContentLength)
+		this.Request.Body.Read(buf)
+		json.Unmarshal(buf, input)
+	} else if mediaType == formEncode {
+		boundary, _ := params["boundary"]
+		reader := multipart.NewReader(this.Request.Body, boundary)
+		f, err := reader.ReadForm(this.Request.ContentLength)
+		if err != nil {
+			return
+		}
+		this.FILE = f.File
+		value2Struct(f.Value, input)
+	}
+}
+
+func value2Struct(v url.Values, st interface{}) {
+	val := reflect.ValueOf(st).Elem()
+	t := reflect.TypeOf(st).Elem()
 	n := t.NumField()
 	for i := 0; i < n; i++ {
 		tf := t.Field(i)
@@ -58,22 +92,22 @@ func (this *Context) ParseGet(inputs interface{}) error {
 
 		switch tp {
 		case "string":
-			val.Field(i).SetString(this.GET.Get(name))
+			val.Field(i).SetString(v.Get(name))
 			break
 		case "int":
-			num, _ := strconv.Atoi(this.GET.Get(name))
+			num, _ := strconv.Atoi(v.Get(name))
 			val.Field(i).SetInt(int64(num))
 			break
 		case "int64":
-			num, _ := strconv.Atoi(this.GET.Get(name))
+			num, _ := strconv.Atoi(v.Get(name))
 			val.Field(i).Set(reflect.ValueOf(int64(num)))
 			break
 		case "[]string":
-			val.Field(i).Set(reflect.ValueOf(this.GET[name+"[]"]))
+			val.Field(i).Set(reflect.ValueOf(v[name+"[]"]))
 			break
 		case "[]int":
 			var arr = make([]int, 0)
-			ss := this.GET[name+"[]"]
+			ss := v[name+"[]"]
 			for _, s := range ss {
 				num, _ := strconv.Atoi(s)
 				arr = append(arr, num)
@@ -82,7 +116,7 @@ func (this *Context) ParseGet(inputs interface{}) error {
 			break
 		case "[]int64":
 			var arr = make([]int64, 0)
-			ss := this.GET[name+"[]"]
+			ss := v[name+"[]"]
 			for _, s := range ss {
 				num, _ := strconv.Atoi(s)
 				arr = append(arr, int64(num))
@@ -90,5 +124,4 @@ func (this *Context) ParseGet(inputs interface{}) error {
 			val.Field(i).Set(reflect.ValueOf(arr))
 		}
 	}
-	return nil
 }
