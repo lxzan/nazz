@@ -40,7 +40,7 @@ func (this *RouterGroup) After(middlewares ...string) *RouterGroup {
 	return this
 }
 
-func (this *RouterGroup) Get(path string, handler Handler) Router {
+func (this *RouterGroup) GET(path string, handler Handler) Router {
 	path = this.prefix + path
 	r1 := staticRouter{
 		Path:           path,
@@ -60,6 +60,30 @@ func (this *RouterGroup) Get(path string, handler Handler) Router {
 			params:       params,
 		}
 		this.server.dynamicRouters["get:"+prefix] = r2
+		return r2
+	}
+}
+
+func (this *RouterGroup) POST(path string, handler Handler) Router {
+	path = this.prefix + path
+	r1 := staticRouter{
+		Path:           path,
+		Method:         "POST",
+		Handler:        handler,
+		BeforeResponse: this.beforeResponse,
+		AfterResponse:  this.afterResponse,
+	}
+	if isStatic(path) {
+		this.server.staticRouters["post:"+path] = &r1
+		return &r1
+	} else {
+		prefix, re, params := parseDynamicRouter(path)
+		r2 := &dynamicRouter{
+			staticRouter: r1,
+			re:           re,
+			params:       params,
+		}
+		this.server.dynamicRouters["post:"+prefix] = r2
 		return r2
 	}
 }

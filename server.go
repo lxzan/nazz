@@ -20,6 +20,8 @@ func NewServer() *Server {
 		staticRouters:  map[string]*staticRouter{},
 		dynamicRouters: map[string]*dynamicRouter{},
 	}
+
+	Register(GLOBAL_BEFORE, "qs_parser", qsParser)
 	return server
 }
 
@@ -44,6 +46,27 @@ func (this *Server) Get(path string, handler Handler) Router {
 	}
 }
 
+func (this *Server) POST(path string, handler Handler) Router {
+	r1 := staticRouter{
+		Path:    path,
+		Method:  "POST",
+		Handler: handler,
+	}
+	if isStatic(path) {
+		this.staticRouters["post:"+path] = &r1
+		return &r1
+	} else {
+		prefix, re, params := parseDynamicRouter(path)
+		r2 := &dynamicRouter{
+			staticRouter: r1,
+			re:           re,
+			params:       params,
+		}
+		this.dynamicRouters["post:"+prefix] = r2
+		return r2
+	}
+}
+
 // 匹配动态路由
 func (this *Server) matchDynamic(ctx *Context) (match bool, router *dynamicRouter) {
 	paths := strings.Split(ctx.Request.URL.Path, "/")
@@ -61,7 +84,7 @@ func (this *Server) matchDynamic(ctx *Context) (match bool, router *dynamicRoute
 		return false, nil
 	}
 	for _, item := range router.params {
-		ctx.PathParams[item.key] = paths[item.index]
+		ctx.PATHINFO[item.key] = paths[item.index]
 	}
 	return true, router
 }
@@ -80,7 +103,7 @@ func (this *globalHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	this.Callback(&Context{
 		Response:   w,
 		Request:    r,
-		PathParams: Form{},
+		PATHINFO: Form{},
 	})
 }
 
@@ -117,14 +140,14 @@ func (this *Server) Listen(port int) {
 			m, r2 := this.matchDynamic(ctx)
 			if m {
 				isMatch = true
-				for _, fn := range r1.BeforeResponse {
+				for _, fn := range r2.BeforeResponse {
 					if !fn(ctx) {
 						return
 					}
 				}
 				data := r2.Handler(ctx)
 				ctx.Response.Write(data)
-				for _, fn := range r1.AfterResponse {
+				for _, fn := range r2.AfterResponse {
 					if !fn(ctx) {
 						return
 					}
