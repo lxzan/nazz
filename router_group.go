@@ -41,7 +41,7 @@ func (this *RouterGroup) After(middlewares ...string) *RouterGroup {
 }
 
 func (this *RouterGroup) GET(path string, handler Handler) Router {
-	path = this.prefix + path
+	path = filterLastSlash(this.prefix + path)
 	r1 := staticRouter{
 		Path:           path,
 		Method:         "GET",
@@ -65,7 +65,7 @@ func (this *RouterGroup) GET(path string, handler Handler) Router {
 }
 
 func (this *RouterGroup) POST(path string, handler Handler) Router {
-	path = this.prefix + path
+	path = filterLastSlash(this.prefix + path)
 	r1 := staticRouter{
 		Path:           path,
 		Method:         "POST",

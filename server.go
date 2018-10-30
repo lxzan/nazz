@@ -71,7 +71,7 @@ func (this *Server) POST(path string, handler Handler) Router {
 func (this *Server) matchDynamic(ctx *Context) (match bool, router *dynamicRouter) {
 	paths := strings.Split(ctx.Request.URL.Path, "/")
 	for i, _ := range paths {
-		key := strings.ToLower(ctx.Request.Method) + ":" + strings.Join(paths[0:i], "/")
+		key := strings.ToLower(ctx.Request.Method) + ":" + strings.Join(paths[0:i+1], "/")
 		r, ok := this.dynamicRouters[key]
 		if ok && r.re.MatchString(ctx.Request.URL.Path) {
 			router = r
@@ -101,8 +101,8 @@ func NewHandler(callback func(ctx *Context)) *globalHandler {
 
 func (this *globalHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	this.Callback(&Context{
-		Response:   w,
-		Request:    r,
+		Response: w,
+		Request:  r,
 		PATHINFO: Form{},
 	})
 }
@@ -118,6 +118,7 @@ func (this *Server) Listen(port int) {
 			}
 		}
 
+		ctx.Request.URL.Path = filterLastSlash(ctx.Request.URL.Path)
 		path := ctx.Request.URL.Path
 		key := strings.ToLower(ctx.Request.Method) + ":" + path
 		r1, ok := this.staticRouters[key]
@@ -165,4 +166,13 @@ func (this *Server) Listen(port int) {
 			}
 		}
 	}))
+}
+
+// 过滤最后的斜杠
+func filterLastSlash(path string) string {
+	length := len(path)
+	if length == 0 || length == 1 || path[length-1] != '/' {
+		return path
+	}
+	return string(path[0 : length-1])
 }

@@ -93,6 +93,6 @@ func parseDynamicRouter(path string) (prefix string, re *regexp.Regexp, params [
 	}
 
 	prefix = strings.Join(paths, "/")
-	re = regexp.MustCompile("^" + strings.Join(patterns, `\/`) + "$")
+	re = regexp.MustCompile("^" + strings.Join(patterns, "/") + "$")
 	return prefix, re, params
 }
