@@ -2,6 +2,9 @@ package nazz
 
 import (
 	"regexp"
+	"strconv"
+	"strings"
+	"time"
 )
 
 // 字符串模板
@@ -41,4 +44,29 @@ func toUpperCamel(s string) string {
 		buf[0] -= 32
 	}
 	return string(buf)
+}
+
+func ToString(num int64) string {
+	return strconv.Itoa(int(num))
+}
+
+func Date(format string, timestamp ...int64) string {
+	var ts = time.Now().Unix()
+	if len(timestamp) > 0 {
+		ts = timestamp[0]
+	}
+	var t = time.Unix(ts, 0)
+	Y := t.Year()
+	m := t.Month()
+	d := t.Day()
+	H := t.Hour()
+	i := t.Minute()
+	s := t.Second()
+	format = strings.Replace(format, "Y", strconv.Itoa(Y), -1)
+	format = strings.Replace(format, "m", strconv.Itoa(int(m)), -1)
+	format = strings.Replace(format, "d", strconv.Itoa(d), -1)
+	format = strings.Replace(format, "H", strconv.Itoa(H), -1)
+	format = strings.Replace(format, "i", strconv.Itoa(i), -1)
+	format = strings.Replace(format, "s", strconv.Itoa(s), -1)
+	return format
 }

@@ -21,6 +21,7 @@ func NewServer() *Server {
 	}
 
 	Register(GLOBAL_BEFORE, "param_parser", paramParser)
+	Register(GLOBAL_AFTER, "access_log", accessLog)
 	return server
 }
 

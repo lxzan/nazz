@@ -1,9 +1,11 @@
 package nazz
 
 import (
+	"log"
 	"mime"
 	"mime/multipart"
 	"net/url"
+	"os"
 )
 
 // 解析query_string和文件
@@ -25,5 +27,12 @@ func paramParser(ctx *Context) bool {
 		reader := multipart.NewReader(ctx.Request.Body, boundary)
 		ctx.Request.MultipartForm, _ = reader.ReadForm(ctx.Request.ContentLength)
 	}
+	return true
+}
+
+var logger = log.New(os.Stdout, "Request: ", 3)
+
+func accessLog(ctx *Context) bool {
+	logger.Printf("IP=%s, Method=%s, URI=%s, UA=%s", ctx.Request.RemoteAddr, ctx.Request.Method, ctx.Request.URL.RequestURI(), ctx.Request.Header.Get("User-Agent"))
 	return true
 }
