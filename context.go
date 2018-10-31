@@ -2,18 +2,17 @@ package nazz
 
 import (
 	"encoding/json"
+	"mime"
+	"mime/multipart"
 	"net/http"
 	"net/url"
 	"reflect"
 	"strconv"
-	"mime"
-	"mime/multipart"
 )
 
 type Context struct {
 	Response http.ResponseWriter
 	Request  *http.Request
-	PATHINFO Form
 	GET      url.Values // GET参数
 	FILE     map[string][]*multipart.FileHeader
 }
@@ -56,7 +55,7 @@ const (
 	formEncode = "multipart/form-data"
 )
 
-func (this *Context) ParseBody(input interface{}) {
+func (this *Context) ParseForm(input interface{}) {
 	contentType := this.Request.Header.Get("Content-Type")
 	mediaType, params, _ := mime.ParseMediaType(contentType)
 
@@ -100,7 +99,7 @@ func value2Struct(v url.Values, st interface{}) {
 			break
 		case "int64":
 			num, _ := strconv.Atoi(v.Get(name))
-			val.Field(i).Set(reflect.ValueOf(int64(num)))
+			val.Field(i).SetInt(int64(num))
 			break
 		case "[]string":
 			val.Field(i).Set(reflect.ValueOf(v[name+"[]"]))

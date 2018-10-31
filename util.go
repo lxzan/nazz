@@ -18,5 +18,27 @@ func Template(tpl string, args ...string) string {
 // 大驼峰转小驼峰
 func toLowerCamel(s string) string {
 	length := len(s)
-	return string(s[0]+32) + s[1:length]
+	if length == 0 {
+		return s
+	}
+
+	buf := []byte(s)
+	if buf[0] >= 'A' && buf[0] <= 'Z' {
+		buf[0] += 32
+	}
+	return string(buf)
+}
+
+// 大驼峰转小驼峰
+func toUpperCamel(s string) string {
+	length := len(s)
+	if length == 0 {
+		return s
+	}
+
+	buf := []byte(s)
+	if buf[0] >= 'a' && buf[0] <= 'z' {
+		buf[0] -= 32
+	}
+	return string(buf)
 }

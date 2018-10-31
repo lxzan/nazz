@@ -3,9 +3,9 @@ package nazz
 import (
 	"fmt"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
-	"net/url"
 )
 
 type Handler func(ctx *Context) []byte
@@ -84,11 +84,7 @@ func (this *Server) matchDynamic(ctx *Context) (match bool, router *dynamicRoute
 		return false, nil
 	}
 	for _, item := range router.params {
-		ctx.PATHINFO[item.key] = paths[item.index]
-	}
-
-	for k, v := range ctx.PATHINFO {
-		ctx.GET.Add(k, v)
+		ctx.GET.Add(item.key, paths[item.index])
 	}
 	return true, router
 }
@@ -107,7 +103,6 @@ func (this *globalHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	this.Callback(&Context{
 		Response: w,
 		Request:  r,
-		PATHINFO: Form{},
 		GET:      url.Values{},
 	})
 }
