@@ -3,7 +3,6 @@ package nazz
 import (
 	"fmt"
 	"net/http"
-	"net/url"
 	"strconv"
 	"strings"
 )
@@ -21,7 +20,7 @@ func NewServer() *Server {
 		dynamicRouters: map[string]*dynamicRouter{},
 	}
 
-	Register(GLOBAL_BEFORE, "qs_parser", qsParser)
+	Register(GLOBAL_BEFORE, "param_parser", paramParser)
 	return server
 }
 
@@ -84,7 +83,7 @@ func (this *Server) matchDynamic(ctx *Context) (match bool, router *dynamicRoute
 		return false, nil
 	}
 	for _, item := range router.params {
-		ctx.GET.Add(item.key, paths[item.index])
+		ctx.Request.Form.Add(item.key, paths[item.index])
 	}
 	return true, router
 }
@@ -103,7 +102,6 @@ func (this *globalHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	this.Callback(&Context{
 		Response: w,
 		Request:  r,
-		GET:      url.Values{},
 	})
 }
 

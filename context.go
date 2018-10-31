@@ -2,8 +2,6 @@ package nazz
 
 import (
 	"encoding/json"
-	"mime"
-	"mime/multipart"
 	"net/http"
 	"net/url"
 	"reflect"
@@ -13,11 +11,15 @@ import (
 type Context struct {
 	Response http.ResponseWriter
 	Request  *http.Request
-	GET      url.Values // GET参数
-	FILE     map[string][]*multipart.FileHeader
 }
 
 type J map[string]interface{}
+
+const (
+	urlEncode  = "application/x-www-form-urlencoded"
+	jsonEncode = "application/json"
+	formEncode = "multipart/form-data"
+)
 
 type Form map[string]string
 
@@ -45,42 +47,8 @@ func (this *Context) SetHeaders(headers Form) {
 	}
 }
 
-func (this *Context) ParseGet(inputs interface{}) {
-	value2Struct(this.GET, inputs)
-}
-
-const (
-	urlEncode  = "application/x-www-form-urlencoded"
-	jsonEncode = "application/json"
-	formEncode = "multipart/form-data"
-)
-
-func (this *Context) ParseForm(input interface{}) {
-	contentType := this.Request.Header.Get("Content-Type")
-	mediaType, params, _ := mime.ParseMediaType(contentType)
-
-	if mediaType == urlEncode {
-		var buf = make([]byte, this.Request.ContentLength)
-		this.Request.Body.Read(buf)
-		v, _ := url.ParseQuery(string(buf))
-		value2Struct(v, input)
-	} else if mediaType == jsonEncode {
-		var buf = make([]byte, this.Request.ContentLength)
-		this.Request.Body.Read(buf)
-		json.Unmarshal(buf, input)
-	} else if mediaType == formEncode {
-		boundary, _ := params["boundary"]
-		reader := multipart.NewReader(this.Request.Body, boundary)
-		f, err := reader.ReadForm(this.Request.ContentLength)
-		if err != nil {
-			return
-		}
-		this.FILE = f.File
-		value2Struct(f.Value, input)
-	}
-}
-
-func value2Struct(v url.Values, st interface{}) {
+// parse url.Values to struct
+func (this *Context) Parse(v url.Values, st interface{}) {
 	val := reflect.ValueOf(st).Elem()
 	t := reflect.TypeOf(st).Elem()
 	n := t.NumField()
@@ -123,4 +91,18 @@ func value2Struct(v url.Values, st interface{}) {
 			val.Field(i).Set(reflect.ValueOf(arr))
 		}
 	}
+}
+
+func (this *Context) ParseForm(st interface{}) {
+	this.Parse(this.Request.PostForm, st)
+}
+
+func (this *Context) ParseQuery(st interface{}) {
+	this.Parse(this.Request.Form, st)
+}
+
+func (this *Context) GetBody(input interface{}) []byte {
+	var body = make([]byte, this.Request.ContentLength)
+	this.Request.Body.Read(body)
+	return body
 }
