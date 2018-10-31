@@ -2,6 +2,8 @@ package nazz
 
 import (
 	"encoding/json"
+	"io/ioutil"
+	"mime/multipart"
 	"net/http"
 	"net/url"
 	"reflect"
@@ -105,4 +107,29 @@ func (this *Context) GetBody(input interface{}) []byte {
 	var body = make([]byte, this.Request.ContentLength)
 	this.Request.Body.Read(body)
 	return body
+}
+
+func (this *Context) GetFile(name string) *multipart.FileHeader {
+	fs := this.Request.MultipartForm.File[name]
+	if len(fs) > 0 {
+		return fs[0]
+	}
+	return nil
+}
+
+func (this *Context) GetFiles(name string) []*multipart.FileHeader {
+	return this.Request.MultipartForm.File[name]
+}
+
+func (this *Context) SaveFile(file *multipart.FileHeader, dst string) error {
+	f, err := file.Open()
+	if err != nil {
+		return err
+	}
+
+	data, err := ioutil.ReadAll(f)
+	if err != nil {
+		return err
+	}
+	return ioutil.WriteFile(dst, data, 0755)
 }
