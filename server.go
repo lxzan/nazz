@@ -88,82 +88,71 @@ func (this *Server) matchDynamic(ctx *Context) (match bool, router *dynamicRoute
 	return true, router
 }
 
-type globalHandler struct {
-	Callback func(ctx *Context)
-}
-
-func NewHandler(callback func(ctx *Context)) *globalHandler {
-	obj := &globalHandler{}
-	obj.Callback = callback
-	return obj
-}
-
-func (this *globalHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	this.Callback(&Context{
+func (this *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ctx := &Context{
 		Response: w,
 		Request:  r,
-	})
+	}
+
+	for _, fn := range globalBeforeWares {
+		if !fn(ctx) {
+			return
+		}
+	}
+
+	ctx.Request.URL.Path = filterLastSlash(ctx.Request.URL.Path)
+	path := ctx.Request.URL.Path
+	key := strings.ToLower(ctx.Request.Method) + ":" + path
+	r1, ok := this.staticRouters[key]
+	isMatch := false
+	if ok {
+		isMatch = true
+		for _, fn := range r1.BeforeResponse {
+			if !fn(ctx) {
+				return
+			}
+		}
+		data := r1.Handler(ctx)
+		ctx.Response.Write(data)
+		for _, fn := range r1.AfterResponse {
+			if !fn(ctx) {
+				return
+			}
+		}
+	} else {
+		m, r2 := this.matchDynamic(ctx)
+		if m {
+			isMatch = true
+			for _, fn := range r2.BeforeResponse {
+				if !fn(ctx) {
+					return
+				}
+			}
+			data := r2.Handler(ctx)
+			ctx.Response.Write(data)
+			for _, fn := range r2.AfterResponse {
+				if !fn(ctx) {
+					return
+				}
+			}
+		}
+	}
+
+	if !isMatch {
+		ctx.Render([]byte("<h1>404 Not Found</h1>"), 404)
+	}
+
+	for _, fn := range globalAfterWares {
+		if !fn(ctx) {
+			return
+		}
+	}
 }
 
 func (this *Server) Listen(port int) {
 	addr := ":" + strconv.Itoa(port)
 	println(fmt.Sprintf("Nazz is listening on port %d", port))
-
-	http.ListenAndServe(addr, NewHandler(func(ctx *Context) {
-		for _, fn := range globalBeforeWares {
-			if !fn(ctx) {
-				return
-			}
-		}
-
-		ctx.Request.URL.Path = filterLastSlash(ctx.Request.URL.Path)
-		path := ctx.Request.URL.Path
-		key := strings.ToLower(ctx.Request.Method) + ":" + path
-		r1, ok := this.staticRouters[key]
-		isMatch := false
-		if ok {
-			isMatch = true
-			for _, fn := range r1.BeforeResponse {
-				if !fn(ctx) {
-					return
-				}
-			}
-			data := r1.Handler(ctx)
-			ctx.Response.Write(data)
-			for _, fn := range r1.AfterResponse {
-				if !fn(ctx) {
-					return
-				}
-			}
-		} else {
-			m, r2 := this.matchDynamic(ctx)
-			if m {
-				isMatch = true
-				for _, fn := range r2.BeforeResponse {
-					if !fn(ctx) {
-						return
-					}
-				}
-				data := r2.Handler(ctx)
-				ctx.Response.Write(data)
-				for _, fn := range r2.AfterResponse {
-					if !fn(ctx) {
-						return
-					}
-				}
-			}
-		}
-
-		if !isMatch {
-			ctx.Render([]byte("<h1>404 Not Found</h1>"), 404)
-		}
-
-		for _, fn := range globalAfterWares {
-			if !fn(ctx) {
-				return
-			}
-		}
-	}))
+	http.ListenAndServe(addr, this)
 }
 
 // 过滤最后的斜杠
