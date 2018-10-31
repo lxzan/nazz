@@ -153,7 +153,10 @@ func (this *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (this *Server) Listen(port int) {
 	addr := ":" + strconv.Itoa(port)
 	println(fmt.Sprintf("Nazz is listening on port %d", port))
-	http.ListenAndServe(addr, this)
+	err := http.ListenAndServe(addr, this)
+	if err != nil {
+		println(err.Error())
+	}
 }
 
 // 过滤最后的斜杠

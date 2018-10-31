@@ -4,10 +4,12 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"mime/multipart"
+	"nazz/helper"
 	"net/http"
 	"net/url"
 	"reflect"
 	"strconv"
+	"strings"
 )
 
 type Context struct {
@@ -56,7 +58,7 @@ func (this *Context) Parse(v url.Values, st interface{}) {
 	n := t.NumField()
 	for i := 0; i < n; i++ {
 		tf := t.Field(i)
-		name := toLowerCamel(tf.Name)
+		name := helper.ToLowerCamel(tf.Name)
 		tp := tf.Type.String()
 
 		switch tp {
@@ -132,4 +134,13 @@ func (this *Context) SaveFile(file *multipart.FileHeader, dst string) error {
 		return err
 	}
 	return ioutil.WriteFile(dst, data, 0755)
+}
+
+func (this *Context) IP() string {
+	ip := this.Request.Header.Get("X-REAL-IP")
+	if ip == "" {
+		arr := strings.Split(this.Request.RemoteAddr, ":")
+		ip = arr[0]
+	}
+	return ip
 }

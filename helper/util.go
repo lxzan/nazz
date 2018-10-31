@@ -1,4 +1,4 @@
-package nazz
+package helper
 
 import (
 	"regexp"
@@ -19,7 +19,7 @@ func Template(tpl string, args ...string) string {
 }
 
 // 大驼峰转小驼峰
-func toLowerCamel(s string) string {
+func ToLowerCamel(s string) string {
 	length := len(s)
 	if length == 0 {
 		return s
