@@ -3,6 +3,7 @@ package nazz
 import (
 	"fmt"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 )
@@ -21,7 +22,6 @@ func NewServer() *Server {
 	}
 
 	Register(GLOBAL_BEFORE, "param_parser", paramParser)
-	Register(GLOBAL_AFTER, "access_log", accessLog)
 	return server
 }
 
@@ -90,6 +90,7 @@ func (this *Server) matchDynamic(ctx *Context) (match bool, router *dynamicRoute
 }
 
 func (this *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	r.Form = url.Values{}
 	ctx := &Context{
 		Response: w,
 		Request:  r,
