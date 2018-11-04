@@ -67,6 +67,48 @@ func (this *Server) POST(path string, handler Handler) Router {
 	}
 }
 
+func (this *Server) PUT(path string, handler Handler) Router {
+	r1 := staticRouter{
+		Path:    path,
+		Method:  "PUT",
+		Handler: handler,
+	}
+	if isStatic(path) {
+		this.staticRouters["put:"+path] = &r1
+		return &r1
+	} else {
+		prefix, re, params := parseDynamicRouter(path)
+		r2 := &dynamicRouter{
+			staticRouter: r1,
+			re:           re,
+			params:       params,
+		}
+		this.dynamicRouters["put:"+prefix] = r2
+		return r2
+	}
+}
+
+func (this *Server) DELETE(path string, handler Handler) Router {
+	r1 := staticRouter{
+		Path:    path,
+		Method:  "DELETE",
+		Handler: handler,
+	}
+	if isStatic(path) {
+		this.staticRouters["delete:"+path] = &r1
+		return &r1
+	} else {
+		prefix, re, params := parseDynamicRouter(path)
+		r2 := &dynamicRouter{
+			staticRouter: r1,
+			re:           re,
+			params:       params,
+		}
+		this.dynamicRouters["delete:"+prefix] = r2
+		return r2
+	}
+}
+
 // 匹配动态路由
 func (this *Server) matchDynamic(ctx *Context) (match bool, router *dynamicRouter) {
 	paths := strings.Split(ctx.Request.URL.Path, "/")

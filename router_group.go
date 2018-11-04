@@ -87,3 +87,51 @@ func (this *RouterGroup) POST(path string, handler Handler) Router {
 		return r2
 	}
 }
+
+func (this *RouterGroup) PUT(path string, handler Handler) Router {
+	path = filterLastSlash(this.prefix + path)
+	r1 := staticRouter{
+		Path:           path,
+		Method:         "PUT",
+		Handler:        handler,
+		BeforeResponse: this.beforeResponse,
+		AfterResponse:  this.afterResponse,
+	}
+	if isStatic(path) {
+		this.server.staticRouters["put:"+path] = &r1
+		return &r1
+	} else {
+		prefix, re, params := parseDynamicRouter(path)
+		r2 := &dynamicRouter{
+			staticRouter: r1,
+			re:           re,
+			params:       params,
+		}
+		this.server.dynamicRouters["put:"+prefix] = r2
+		return r2
+	}
+}
+
+func (this *RouterGroup) DELETE(path string, handler Handler) Router {
+	path = filterLastSlash(this.prefix + path)
+	r1 := staticRouter{
+		Path:           path,
+		Method:         "DELETE",
+		Handler:        handler,
+		BeforeResponse: this.beforeResponse,
+		AfterResponse:  this.afterResponse,
+	}
+	if isStatic(path) {
+		this.server.staticRouters["delete:"+path] = &r1
+		return &r1
+	} else {
+		prefix, re, params := parseDynamicRouter(path)
+		r2 := &dynamicRouter{
+			staticRouter: r1,
+			re:           re,
+			params:       params,
+		}
+		this.server.dynamicRouters["delete:"+prefix] = r2
+		return r2
+	}
+}
