@@ -1,1 +1,1 @@
-module nazz
+module github.com/lxzan/nazz
