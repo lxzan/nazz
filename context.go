@@ -2,9 +2,9 @@ package nazz
 
 import (
 	"encoding/json"
+	"github.com/lxzan/nazz/helper"
 	"io/ioutil"
 	"mime/multipart"
-	"nazz/helper"
 	"net/http"
 	"net/url"
 	"reflect"
@@ -134,6 +134,11 @@ func (this *Context) SaveFile(file *multipart.FileHeader, dst string) error {
 		return err
 	}
 	return ioutil.WriteFile(dst, data, 0755)
+}
+
+func (this *Context) Redirect(url string) []byte {
+	http.Redirect(this.Response, this.Request, url, 302)
+	return []byte("")
 }
 
 func (this *Context) IP() string {
