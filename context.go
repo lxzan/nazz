@@ -15,6 +15,7 @@ import (
 type Context struct {
 	Response http.ResponseWriter
 	Request  *http.Request
+	Storage  J
 }
 
 type J map[string]interface{}

@@ -136,6 +136,7 @@ func (this *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := &Context{
 		Response: w,
 		Request:  r,
+		Storage:  J{},
 	}
 
 	for _, fn := range globalBeforeWares {
