@@ -1,7 +1,6 @@
 package nazz
 
 import (
-	"encoding/json"
 	"github.com/lxzan/nazz/helper"
 	"io/ioutil"
 	"mime/multipart"
@@ -10,6 +9,7 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"github.com/json-iterator/go"
 )
 
 type Context struct {
@@ -34,7 +34,7 @@ func (this *Context) JSON(v interface{}, statusCode ...int) []byte {
 		this.Response.WriteHeader(statusCode[0])
 	}
 
-	data, _ := json.Marshal(v)
+	data, _ := jsoniter.Marshal(v)
 	return data
 }
 

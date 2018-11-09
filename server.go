@@ -2,6 +2,7 @@ package nazz
 
 import (
 	"fmt"
+	"github.com/json-iterator/go"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -16,6 +17,7 @@ type Server struct {
 }
 
 func NewServer() *Server {
+	jsoniter.ConfigDefault = jsoniter.Config{EscapeHTML: false}.Froze()
 	server := &Server{
 		staticRouters:  map[string]*staticRouter{},
 		dynamicRouters: map[string]*dynamicRouter{},
